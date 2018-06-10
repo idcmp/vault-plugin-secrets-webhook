@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
+	"path/filepath"
 )
 
 func pathDestination(b *backend) *framework.Path {
@@ -93,6 +94,7 @@ type Destination struct {
 }
 
 func (b *backend) createDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Warn("create", "path", req.Path)
 
 	var d Destination
 
@@ -117,13 +119,22 @@ func (b *backend) createDestination(ctx context.Context, req *logical.Request, d
 	return &logical.Response{}, nil
 }
 
-func (b *backend) readDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
-
-	entry, _ := req.Storage.Get(ctx, req.Path)
-
+func entryToDestination(entry *logical.StorageEntry) (*Destination, error) {
 	var d Destination
 
 	if err := json.Unmarshal(entry.Value, &d); err != nil {
+		return nil, errwrap.Wrapf("failed to unmarshal destinati0on: {{err}}", err)
+	}
+
+	return &d, nil
+
+}
+func (b *backend) readDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Warn("read", "path", req.Path)
+
+	entry, _ := req.Storage.Get(ctx, req.Path)
+	d, err := entryToDestination(entry)
+	if err != nil {
 		return nil, errwrap.Wrapf("failed to unmarshal destinati0on: {{err}}", err)
 	}
 
@@ -140,26 +151,39 @@ func (b *backend) readDestination(ctx context.Context, req *logical.Request, dat
 }
 
 func (b *backend) updateDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Warn("hi", "path", req.Path)
 	return nil, fmt.Errorf("baby steps")
 
 }
 func (b *backend) deleteDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Warn("hi", "path", req.Path)
 	return nil, fmt.Errorf("baby steps")
 
 }
 func (b *backend) destinationExistenceCheck(ctx context.Context, req *logical.Request, data *framework.FieldData) (bool, error) {
+	b.Logger().Warn("hi", "path", req.Path)
 	return false, nil
 }
 
 // Sends an empty "ping" document to the destination and expects it to respond with a non-error HTTP return code.
 func (b *backend) pingDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Warn("hi", "path", req.Path)
 	return nil, fmt.Errorf("baby steps")
 }
 
 func (b *backend) contactDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
 	b.Logger().Warn("Request: ", "path", req.Path, "params", data.Raw)
 
-	sendRequest("http://localhost:8888/yes/", "{}", false)
+	b.Logger().Warn("contact destination", "path", req.Path)
+	entry, _ := req.Storage.Get(ctx, filepath.ToSlash(filepath.Join("config", req.Path)))
+
+	d, err := entryToDestination(entry)
+	if err != nil {
+		return nil, errwrap.Wrapf("failed to unmarshal destinati0on: {{err}}", err)
+	}
+
+	b.Logger().Warn("fetch", "entry", entry)
+	sendRequest(d.TargetURL, "{}", false)
 
 	return nil, fmt.Errorf("baby steps")
 }

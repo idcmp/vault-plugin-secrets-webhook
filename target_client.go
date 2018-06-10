@@ -16,7 +16,7 @@ func sendRequest(url string, body string, followRedirects bool) error {
 		}
 	}
 
-	req, err := http.NewRequest("POST", url, strings.NewReader(body));
+	req, err := http.NewRequest("POST", url, strings.NewReader(body))
 	if err != nil {
 		return errwrap.Wrapf("error making request: {{err}}", err)
 	}

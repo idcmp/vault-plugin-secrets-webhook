@@ -18,5 +18,6 @@ vault write sys/plugins/catalog/relay-plugin command=vault-plugin-secrets-relay 
 
 vault secrets enable -path=relay -plugin-name=relay-plugin plugin
 
+vault write relay/config/destination/hello target_url=http://localhost:8888/
+vault read relay/config/destination/hello
 vault write relay/destination/hello foo=bar
-
