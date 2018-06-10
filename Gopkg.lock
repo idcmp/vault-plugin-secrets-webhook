@@ -137,8 +137,6 @@
     "helper/consts",
     "helper/errutil",
     "helper/jsonutil",
-    "helper/kdf",
-    "helper/keysutil",
     "helper/locksutil",
     "helper/logging",
     "helper/mlock",
@@ -157,12 +155,6 @@
     "version"
   ]
   revision = "5086e9cf76ca3cdf8605a654afbaab07f2b76e0b"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/vault-plugin-secrets-kv"
-  packages = ["."]
-  revision = "f34be853827f3b0511169188ff1db08adacfd3ac"
 
 [[projects]]
   branch = "master"
@@ -202,19 +194,6 @@
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/crypto"
-  packages = [
-    "chacha20poly1305",
-    "ed25519",
-    "ed25519/internal/edwards25519",
-    "hkdf",
-    "internal/chacha20",
-    "poly1305"
-  ]
-  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -230,10 +209,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = [
-    "cpu",
-    "unix"
-  ]
+  packages = ["unix"]
   revision = "9527bec2660bd847c050fda93a0f0c6dee0800bb"
 
 [[projects]]
@@ -305,6 +281,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e8a1c35c389c2c235bef30bde2d69788b608b49437b86964d2abaa5082dca8b0"
+  inputs-digest = "f8c06cc3068cc3e8e159285d4be0416f2902330bb9aeebdca536d9c69432f66a"
   solver-name = "gps-cdcl"
   solver-version = 1
