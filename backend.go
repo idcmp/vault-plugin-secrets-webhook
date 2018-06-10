@@ -78,15 +78,15 @@ type backend struct {
 	*framework.Backend
 
 	// internal is used to test invalidate
-	internal string
+	//internal string
 }
 
-func (b *backend) invalidate(ctx context.Context, key string) {
-	switch key {
-	case "internal":
-		b.internal = ""
-	}
-}
+//func (b *backend) invalidate(ctx context.Context, key string) {
+//	switch key {
+//	case "internal":
+//		b.internal = ""
+//	}
+//}
 
 const backendHelp = `
 The relay backend sends signed HTTP requests to other services, allowing Vault to perform the AAA

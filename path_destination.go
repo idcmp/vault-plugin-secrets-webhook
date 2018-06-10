@@ -82,9 +82,10 @@ func pathConfigDestination(b *backend) *framework.Path {
 	}
 }
 
+// Destination contains all the operator specified configuration.
 type Destination struct {
-	TargetUrl       string            `json:"target_url"`
-	SendEntityId    bool              `json:"send_entity_id"`
+	TargetURL       string            `json:"target_url"`
+	SendEntityID    bool              `json:"send_entity_id"`
 	Timeout         int               `json:"timeout"`
 	FollowRedirects bool              `json:"follow_redirects"`
 	Parameters      []string          `json:"params"`
@@ -95,8 +96,8 @@ func (b *backend) createDestination(ctx context.Context, req *logical.Request, d
 
 	var d Destination
 
-	d.TargetUrl = data.Get("target_url").(string)
-	d.SendEntityId = data.Get("send_entity_id").(bool)
+	d.TargetURL = data.Get("target_url").(string)
+	d.SendEntityID = data.Get("send_entity_id").(bool)
 	d.Timeout = data.Get("timeout").(int)
 	d.FollowRedirects = data.Get("follow_redirects").(bool)
 
@@ -128,8 +129,8 @@ func (b *backend) readDestination(ctx context.Context, req *logical.Request, dat
 
 	return &logical.Response{
 		Data: map[string]interface{}{
-			"target_url":       d.TargetUrl,
-			"send_entity_id":   d.SendEntityId,
+			"target_url":       d.TargetURL,
+			"send_entity_id":   d.SendEntityID,
 			"timeout":          d.Timeout,
 			"follow_redirects": d.FollowRedirects,
 			"params":           d.Parameters,
