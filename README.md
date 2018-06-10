@@ -1,1 +1,1 @@
-# vault-relay-plugin
+# vault-plugin-secrets-relay
