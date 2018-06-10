@@ -24,21 +24,11 @@
 #   go-tests = true
 #   unused-packages = true
 
-[[constraint]]
-  name = "github.com/golang/protobuf"
-  version = "1.1.0"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/hashicorp/go-hclog"
 
 [[constraint]]
   branch = "master"
   name = "github.com/hashicorp/vault"
 
-[[constraint]]
-  branch = "master"
-  name = "github.com/mitchellh/mapstructure"
 
 [prune]
   go-tests = true
