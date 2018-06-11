@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 killall -9 vault
+killall -9 vault-plugin-secrets-relay
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PLUGIN_DIR=$(dirname $(realpath "${DIR}/../bin/vault-plugin-secrets-relay"))

@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/errwrap"
+	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 func pathDestination(b *backend) *framework.Path {
@@ -31,6 +34,7 @@ func pathDestination(b *backend) *framework.Path {
 }
 
 func pathConfigDestination(b *backend) *framework.Path {
+
 	return &framework.Path{
 		Pattern: `config/destination/(?P<target_name>.+)`,
 		Fields: map[string]*framework.FieldSchema{
@@ -43,7 +47,7 @@ func pathConfigDestination(b *backend) *framework.Path {
 				Description: "", // TODO
 			},
 			"params": {
-				Type:        framework.TypeKVPairs,
+				Type:        framework.TypeCommaStringSlice,
 				Description: "", // TODO
 			},
 			"send_entity_id": {
@@ -72,7 +76,7 @@ func pathConfigDestination(b *backend) *framework.Path {
 		},
 
 		Callbacks: map[logical.Operation]framework.OperationFunc{
-			logical.CreateOperation: b.createDestination,
+			logical.CreateOperation: b.pathCreateDestination,
 			logical.ReadOperation:   b.readDestination,
 			logical.UpdateOperation: b.updateDestination,
 			logical.DeleteOperation: b.deleteDestination,
@@ -87,26 +91,81 @@ func pathConfigDestination(b *backend) *framework.Path {
 type Destination struct {
 	TargetURL       string            `json:"target_url"`
 	SendEntityID    bool              `json:"send_entity_id"`
-	Timeout         int               `json:"timeout"`
+	Timeout         time.Duration     `json:"timeout"`
 	FollowRedirects bool              `json:"follow_redirects"`
 	Parameters      []string          `json:"params"`
 	Metadata        map[string]string `json:"metadata"`
 }
 
-func (b *backend) createDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
-	b.Logger().Warn("create", "path", req.Path)
-
+// Parse fields from the user and create a Destination with sanitized input.
+func (b *backend) createDestination(data *framework.FieldData) (*Destination, error) {
 	var d Destination
 
-	d.TargetURL = data.Get("target_url").(string)
-	d.SendEntityID = data.Get("send_entity_id").(bool)
-	d.Timeout = data.Get("timeout").(int)
-	d.FollowRedirects = data.Get("follow_redirects").(bool)
+	b.Logger().Info("Creating destination", "data", data)
 
-	// TODO : mandatory target url
+	target, ok, err := data.GetOkErr("target_url")
+	if !ok {
+		return nil, fmt.Errorf("target_url is required")
+	}
+	if err != nil {
+		return nil, errwrap.Wrapf("could not parse target_url: {{err}}", err)
+	}
+	d.TargetURL = target.(string)
 
-	buf, _ := json.Marshal(d)
+	sendEntity, err := getFieldValue("send_entity_id", data)
+	if err != nil {
+		return nil, err
+	}
+	d.SendEntityID = sendEntity.(bool)
 
+	timeout, err := getFieldValue("timeout", data)
+	if err != nil {
+		return nil, err
+	}
+
+	d.Timeout = time.Duration(timeout.(int)) * time.Second
+
+	followRedirects, err := getFieldValue("follow_redirects", data)
+	if err != nil {
+		return nil, err
+	}
+	d.FollowRedirects = followRedirects.(bool)
+
+	params, err := getFieldValue("params", data)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, param := range params.([]string) {
+		key := strings.ToLower(param)
+		if !StrListContains(d.Parameters, key) {
+			d.Parameters = append(d.Parameters, key)
+		}
+	}
+
+	metadata, err := getFieldValue("metadata", data)
+	if err != nil {
+		return nil, err
+	}
+	d.Metadata = metadata.(map[string]string)
+
+	b.Logger().Info("Destination created", "destination", d)
+	return &d, nil
+
+}
+
+func (b *backend) pathCreateDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Warn("create", "path", req.Path)
+
+	d, err := b.createDestination(data)
+	if err != nil {
+		return nil, errwrap.Wrapf("failed to create destination: {{err}}", err)
+	}
+
+	buf, err := json.Marshal(d)
+	if err != nil {
+		return nil, errwrap.Wrapf("failed to create destination: {{err}}", err)
+	}
 	entry := &logical.StorageEntry{
 		Key:   req.Path,
 		Value: buf,
@@ -119,16 +178,6 @@ func (b *backend) createDestination(ctx context.Context, req *logical.Request, d
 	return &logical.Response{}, nil
 }
 
-func entryToDestination(entry *logical.StorageEntry) (*Destination, error) {
-	var d Destination
-
-	if err := json.Unmarshal(entry.Value, &d); err != nil {
-		return nil, errwrap.Wrapf("failed to unmarshal destinati0on: {{err}}", err)
-	}
-
-	return &d, nil
-
-}
 func (b *backend) readDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
 	b.Logger().Warn("read", "path", req.Path)
 
@@ -138,11 +187,13 @@ func (b *backend) readDestination(ctx context.Context, req *logical.Request, dat
 		return nil, errwrap.Wrapf("failed to unmarshal destinati0on: {{err}}", err)
 	}
 
+	timeout := fmt.Sprintf("%v", d.Timeout)
+
 	return &logical.Response{
 		Data: map[string]interface{}{
 			"target_url":       d.TargetURL,
 			"send_entity_id":   d.SendEntityID,
-			"timeout":          d.Timeout,
+			"timeout":          timeout,
 			"follow_redirects": d.FollowRedirects,
 			"params":           d.Parameters,
 			"metadata":         d.Metadata,
@@ -171,19 +222,71 @@ func (b *backend) pingDestination(ctx context.Context, req *logical.Request, dat
 	return nil, fmt.Errorf("baby steps")
 }
 
+type Document struct {
+	Nonce      string            `json:"nonce"`
+	Path       string            `json:"path"`
+	Timestamp  int64             `json:"timestamp"`
+	RequestID  string            `json:"request_id"`
+	EntityID   string            `json:"entity_id,omitempty"`
+	Parameters map[string]string `json:"params,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+}
+
 func (b *backend) contactDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
 	b.Logger().Warn("Request: ", "path", req.Path, "params", data.Raw)
 
 	b.Logger().Warn("contact destination", "path", req.Path)
 	entry, _ := req.Storage.Get(ctx, filepath.ToSlash(filepath.Join("config", req.Path)))
 
-	d, err := entryToDestination(entry)
+	destination, err := entryToDestination(entry)
 	if err != nil {
-		return nil, errwrap.Wrapf("failed to unmarshal destinati0on: {{err}}", err)
+		return nil, errwrap.Wrapf("failed to unmarshal destination: {{err}}", err)
 	}
 
-	b.Logger().Warn("fetch", "entry", entry)
-	sendRequest(d.TargetURL, "{}", false)
+	nonce, err := uuid.GenerateUUID()
+	if err != nil {
+		return nil, errwrap.Wrapf("failed to generate nonce: {{err}}", err)
+	}
 
-	return nil, fmt.Errorf("baby steps")
+	// Build Document
+	var document Document
+
+	document.Nonce = nonce
+	document.Path = data.Raw["target_name"].(string)
+	if destination.SendEntityID {
+		document.EntityID = req.EntityID
+	}
+	document.Timestamp = time.Now().Unix()
+	document.RequestID = req.ID
+	if destination.Metadata != nil {
+		document.Metadata = destination.Metadata
+	}
+	document.Parameters = make(map[string]string)
+
+	for _, p := range destination.Parameters {
+		val := data.Raw[p]
+		if val != nil {
+			document.Parameters[p] = val.(string)
+		}
+	}
+
+	bytesOut, err := json.Marshal(document)
+
+	if err != nil {
+		return nil, errwrap.Wrapf("could not marshal document: {{err}}", err)
+	}
+
+	bytesIn, err := sendRequest(destination.TargetURL, bytesOut, destination.FollowRedirects, destination.Timeout)
+
+	if err != nil {
+		return nil, errwrap.Wrapf("could not process request: {{err}}", err)
+	}
+
+	b.Logger().Warn("response", "body", string(bytesIn))
+
+	return &logical.Response{
+		Data: map[string]interface{}{
+			"response": string(bytesIn),
+		},
+	}, nil
 }
