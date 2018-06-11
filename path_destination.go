@@ -24,8 +24,8 @@ func pathDestination(b *backend) *framework.Path {
 		},
 
 		Callbacks: map[logical.Operation]framework.OperationFunc{
-			logical.UpdateOperation: b.contactDestination,
-			logical.ReadOperation:   b.pingDestination,
+			logical.UpdateOperation: b.pathContactDestination,
+			logical.ReadOperation:   b.pathPingDestination,
 		},
 
 		//HelpSynopsis:    pathFetchHelpSyn,
@@ -217,7 +217,7 @@ func (b *backend) destinationExistenceCheck(ctx context.Context, req *logical.Re
 }
 
 // Sends an empty "ping" document to the destination and expects it to respond with a non-error HTTP return code.
-func (b *backend) pingDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+func (b *backend) pathPingDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
 	b.Logger().Warn("hi", "path", req.Path)
 	return nil, fmt.Errorf("baby steps")
 }
@@ -232,7 +232,7 @@ type Document struct {
 	Metadata   map[string]string `json:"metadata,omitempty"`
 }
 
-func (b *backend) contactDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+func (b *backend) pathContactDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
 	b.Logger().Warn("Request: ", "path", req.Path, "params", data.Raw)
 
 	b.Logger().Warn("contact destination", "path", req.Path)
@@ -263,10 +263,10 @@ func (b *backend) contactDestination(ctx context.Context, req *logical.Request, 
 	}
 	document.Parameters = make(map[string]string)
 
-	for _, p := range destination.Parameters {
-		val := data.Raw[p]
-		if val != nil {
-			document.Parameters[p] = val.(string)
+	for k, v := range data.Raw {
+		lowKey := strings.ToLower(k)
+		if StrListContains(destination.Parameters, lowKey) {
+			document.Parameters[lowKey] = v.(string)
 		}
 	}
 
