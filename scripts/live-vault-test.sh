@@ -19,7 +19,7 @@ vault write sys/plugins/catalog/relay-plugin command=vault-plugin-secrets-relay 
 
 vault secrets enable -path=relay -plugin-name=relay-plugin plugin
 
-vault write relay/config/destination/hello target_url=http://localhost:8888/ params=foo timeout=5s send_entity_id=true follow_redirects=false metdata=version=1 metadata=test=yes
+vault write relay/config/destination/hello target_url=http://localhost:8888/ params=foo timeout=5s send_entity_id=true follow_redirects=false metadata=version=1 metadata=test=yes
 
 vault read relay/config/destination/hello
 vault write relay/destination/hello foo=bar

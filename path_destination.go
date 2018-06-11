@@ -261,8 +261,8 @@ func (b *backend) pathContactDestination(ctx context.Context, req *logical.Reque
 	if destination.Metadata != nil {
 		document.Metadata = destination.Metadata
 	}
-	document.Parameters = make(map[string]string)
 
+	document.Parameters = make(map[string]string)
 	for k, v := range data.Raw {
 		lowKey := strings.ToLower(k)
 		if StrListContains(destination.Parameters, lowKey) {
