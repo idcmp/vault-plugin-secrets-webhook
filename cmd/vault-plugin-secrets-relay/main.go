@@ -3,11 +3,12 @@ package main
 import (
 	"os"
 
+	"log"
+
 	"github.com/hashicorp/vault/helper/pluginutil"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/plugin"
 	"github.com/idcmp/vault-plugin-secrets-relay"
-	"log"
 )
 
 func main() {

@@ -3,6 +3,7 @@ package relay
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
@@ -23,11 +24,13 @@ func getFieldValue(fieldName string, data *framework.FieldData) (interface{}, er
 	if err != nil {
 		return nil, errwrap.Wrapf(fmt.Sprintf("could not parse %s: {{err}}", fieldName), err)
 	}
+
 	if ok {
 		return value, nil
-	} else {
-		return data.GetDefaultOrZero(fieldName), nil
 	}
+
+	return data.GetDefaultOrZero(fieldName), nil
+
 }
 
 // StrListContains looks for a string in a list of strings.

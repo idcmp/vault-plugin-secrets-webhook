@@ -3,6 +3,7 @@ package relay
 import (
 	"context"
 	"fmt"
+
 	"github.com/SermoDigital/jose/crypto"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/logical"
@@ -11,7 +12,7 @@ import (
 
 func pathFetchJwsCertificate(b *backend) *framework.Path {
 	return &framework.Path{
-		Pattern: `jws/certificate`,
+		Pattern: `keys/jws/certificate`,
 		Callbacks: map[logical.Operation]framework.OperationFunc{
 			logical.ReadOperation: b.pathReadJwsCertificate,
 		},
@@ -88,7 +89,11 @@ func (b *backend) pathWriteJwsKeys(ctx context.Context, req *logical.Request, da
 		Value: privKeyBytes,
 	}
 
-	req.Storage.Put(ctx, publicEntry)
-	req.Storage.Put(ctx, privateEntry)
+	if err := req.Storage.Put(ctx, publicEntry); err != nil {
+		return nil, errwrap.Wrapf("could not store certificate: {{err}}", err)
+	}
+	if err := req.Storage.Put(ctx, privateEntry); err != nil {
+		return nil, errwrap.Wrapf("could not store private_key: {{err}}", err)
+	}
 	return &logical.Response{}, nil
 }

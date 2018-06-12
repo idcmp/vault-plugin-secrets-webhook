@@ -2,11 +2,12 @@ package relay
 
 import (
 	"bytes"
-	"github.com/hashicorp/errwrap"
-	"github.com/hashicorp/go-cleanhttp"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/hashicorp/errwrap"
+	"github.com/hashicorp/go-cleanhttp"
 )
 
 func sendRequest(url string, body []byte, followRedirects bool, timeout time.Duration) ([]byte, error) {
@@ -31,7 +32,9 @@ func sendRequest(url string, body []byte, followRedirects bool, timeout time.Dur
 	}
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
-
+	if err != nil {
+		return nil, errwrap.Wrapf("error reading response: {{err}}", err)
+	}
 	resp.Body.Close()
 
 	return responseBody, nil

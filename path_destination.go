@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 func pathDestination(b *backend) *framework.Path {
@@ -215,12 +216,9 @@ func (b *backend) pathDeleteDestination(ctx context.Context, req *logical.Reques
 	b.Logger().Warn("delete destination", "path", req.Path)
 
 	err := req.Storage.Delete(ctx, req.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, nil
+	return nil, err
 }
+
 func (b *backend) pathDestinationExistenceCheck(ctx context.Context, req *logical.Request, data *framework.FieldData) (bool, error) {
 	b.Logger().Warn("destination existence check", "path", req.Path)
 	entry, err := req.Storage.Get(ctx, req.Path)
@@ -242,24 +240,14 @@ func (b *backend) pathListDestinations(ctx context.Context, req *logical.Request
 	return logical.ListResponse(elements), nil
 }
 
-func (b *backend) pathContactDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
-	b.Logger().Warn("Request: ", "path", req.Path, "params", data.Raw)
-
-	b.Logger().Warn("contact destination", "path", req.Path)
-	entry, _ := req.Storage.Get(ctx, filepath.ToSlash(filepath.Join("config", req.Path)))
-
-	destination, err := entryToDestination(entry)
-	if err != nil {
-		return nil, errwrap.Wrapf("failed to unmarshal destination: {{err}}", err)
-	}
+func (b *backend) buildDocument(destination *Destination, req *logical.Request, data *framework.FieldData) (*Document, error) {
+	// Build Document
+	var document Document
 
 	nonce, err := uuid.GenerateUUID()
 	if err != nil {
 		return nil, errwrap.Wrapf("failed to generate nonce: {{err}}", err)
 	}
-
-	// Build Document
-	var document Document
 
 	document.Nonce = nonce
 	document.Path = data.Get("target_name").(string)
@@ -280,6 +268,20 @@ func (b *backend) pathContactDestination(ctx context.Context, req *logical.Reque
 		}
 	}
 
+	return &document, nil
+}
+
+func (b *backend) pathContactDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Warn("Request: ", "path", req.Path, "params", data.Raw)
+
+	b.Logger().Warn("contact destination", "path", req.Path)
+	entry, _ := req.Storage.Get(ctx, filepath.ToSlash(filepath.Join("config", req.Path)))
+
+	destination, err := entryToDestination(entry)
+	if err != nil {
+		return nil, errwrap.Wrapf("failed to unmarshal destination: {{err}}", err)
+	}
+
 	// TODO Should we cache this?
 	storageEntry, err := req.Storage.Get(ctx, "config/keys/jws/private_key")
 
@@ -291,7 +293,12 @@ func (b *backend) pathContactDestination(ctx context.Context, req *logical.Reque
 		return nil, fmt.Errorf("incomplete cryptographic configuration, set jws keys")
 	}
 
-	bytesOut, err := serializeDocument(document, storageEntry.Value)
+	document, err := b.buildDocument(destination, req, data)
+	if err != nil {
+		return nil, errwrap.Wrapf("could not build document: {{err}}", err)
+	}
+
+	bytesOut, err := serializeDocument(*document, storageEntry.Value)
 
 	if err != nil {
 		return nil, errwrap.Wrapf("could not marshal document: {{err}}", err)

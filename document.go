@@ -6,6 +6,8 @@ import (
 	"github.com/hashicorp/errwrap"
 )
 
+// Document is serialized to JSON, signed using JWS and then POSTed to the target
+// server where the signature must be verified.
 type Document struct {
 	Nonce      string            `json:"nonce"`
 	Path       string            `json:"path"`

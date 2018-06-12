@@ -2,9 +2,10 @@ package relay
 
 import (
 	"context"
+	"strings"
+
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
-	"strings"
 )
 
 // New returns a new backend as an interface. This func
@@ -43,7 +44,7 @@ func Backend() *backend {
 
 		PathsSpecial: &logical.Paths{
 			Unauthenticated: []string{
-				"keys/jws/public",
+				"keys/jws/certificate",
 				"keys/client/certificate",
 			},
 
