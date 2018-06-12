@@ -13,6 +13,10 @@ EOF
 vault server -dev --dev-root-token-id=root-token --config=/tmp/vault.hcl &
 sleep 1
 
+
+openssl genrsa -out ${DIR}/sample_key.priv 2048
+openssl rsa -in sample_key.priv -pubout >${DIR}/sample_key.pub
+
 SHA=$(shasum -a 256 "${PLUGIN_DIR}/vault-plugin-secrets-relay" |awk '{print $1}')
 
 vault write sys/plugins/catalog/relay-plugin command=vault-plugin-secrets-relay sha_256=$SHA
@@ -20,6 +24,12 @@ vault write sys/plugins/catalog/relay-plugin command=vault-plugin-secrets-relay 
 vault secrets enable -path=relay -plugin-name=relay-plugin plugin
 
 vault write relay/config/destination/hello target_url=http://localhost:8888/ params=foo timeout=5s send_entity_id=true follow_redirects=false metadata=version=1 metadata=test=yes
+vault write relay/config/keys/jws certificate=@${DIR}/sample_key.pub private_key=@${DIR}/sample_key.priv
 
 vault read relay/config/destination/hello
 vault write relay/destination/hello foo=bar
+
+
+vault read -field=certificate relay/jws/certificate
+
+

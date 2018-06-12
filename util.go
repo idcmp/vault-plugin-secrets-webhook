@@ -16,7 +16,6 @@ func entryToDestination(entry *logical.StorageEntry) (*Destination, error) {
 	}
 
 	return &d, nil
-
 }
 
 func getFieldValue(fieldName string, data *framework.FieldData) (interface{}, error) {

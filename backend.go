@@ -57,12 +57,13 @@ func Backend() *backend {
 		},
 
 		Paths: []*framework.Path{
-			//pathConfigJws(&b),
+			pathConfigJws(&b),
+			pathFetchJwsCertificate(&b),
 			//pathConfigClient(&b),
 			pathConfigDestination(&b),
-			//pathVerify(&b),
+			pathConfigDestinations(&b),
 			pathDestination(&b),
-			//pathFetchJwsCertificate(&b),
+			//pathVerify(&b),
 			//pathFetchClientCertificate(&b),
 		},
 
@@ -76,17 +77,7 @@ func Backend() *backend {
 
 type backend struct {
 	*framework.Backend
-
-	// internal is used to test invalidate
-	//internal string
 }
-
-//func (b *backend) invalidate(ctx context.Context, key string) {
-//	switch key {
-//	case "internal":
-//		b.internal = ""
-//	}
-//}
 
 const backendHelp = `
 The relay backend sends signed HTTP requests to other services, allowing Vault to perform the AAA

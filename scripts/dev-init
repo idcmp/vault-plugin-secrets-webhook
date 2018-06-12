@@ -1,0 +1,6 @@
+export VAULT_ADDR=http://localhost:8200
+export VAULT_TOKEN=root-token
+export VAULT_DEV_BUILD="yes"
+
+alias m='make fmt && make'
+alias v='bash scripts/live-vault-test.sh'
