@@ -1,4 +1,4 @@
-package relay
+package webhook
 
 import (
 	"context"
@@ -81,6 +81,6 @@ type backend struct {
 }
 
 const backendHelp = `
-The relay backend sends signed HTTP requests to other services, allowing Vault to perform the AAA
+The webhook backend sends signed HTTP requests to other services, allowing Vault to perform the AAA
 work for privileged requests.
 `

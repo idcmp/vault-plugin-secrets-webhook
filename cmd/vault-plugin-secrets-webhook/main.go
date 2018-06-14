@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/vault/helper/pluginutil"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/plugin"
-	"github.com/idcmp/vault-plugin-secrets-relay"
+	webhook "github.com/idcmp/vault-plugin-secrets-webhook"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 	tlsConfig := apiClientMeta.GetTLSConfig()
 	tlsProviderFunc := pluginutil.VaultPluginTLSProvider(tlsConfig)
 
-	factoryFunc := relay.FactoryType(logical.TypeLogical)
+	factoryFunc := webhook.FactoryType(logical.TypeLogical)
 
 	err := plugin.Serve(&plugin.ServeOpts{
 		BackendFactoryFunc: factoryFunc,

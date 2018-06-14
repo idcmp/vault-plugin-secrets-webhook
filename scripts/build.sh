@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TOOL=vault-plugin-secrets-relay
+TOOL=vault-plugin-secrets-webhook
 #
 # This script builds the application from source for multiple platforms.
 set -e

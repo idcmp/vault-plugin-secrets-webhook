@@ -1,4 +1,4 @@
-TOOL?=vault-plugin-secrets-relay
+TOOL?=vault-plugin-secrets-webhook
 TEST?=$$(go list ./... | grep -v /vendor/)
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods -nilfunc -printf -rangeloops -shift -structtags -unsafeptr
 EXTERNAL_TOOLS=\

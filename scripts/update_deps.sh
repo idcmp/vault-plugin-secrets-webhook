@@ -2,7 +2,7 @@
 
 set -e
 
-TOOL=vault-plugin-secrets-relay
+TOOL=vault-plugin-secrets-webhook
 
 ## Make a temp dir
 tempdir=$(mktemp -d update-${TOOL}-deps.XXXXXX)

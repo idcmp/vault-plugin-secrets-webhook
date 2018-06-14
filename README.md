@@ -1,9 +1,9 @@
-# vault-plugin-secrets-relay
+# vault-plugin-secrets-webhook
 
 ## Purpose
 
 HashiCorp Vault provides top notch AAA services. There are times where it would be handy to use the
-authentication/authorization services it provides outside of Vault itself. The relay plugin is a very
+authentication/authorization services it provides outside of Vault itself. The webhook plugin is a very
 simple plugin that just sends HTTP requests to configured targets when a Vault user writes to a particular path
 inside Vault. The HTTP request that Vault makes includes a JWS-signed JSON payload describing the request.
 
@@ -18,7 +18,7 @@ However, as Vault administrators, we don't want these users to enroll just any A
 a trusted "AMIBot" that runs with heightened Vault privileges. It's configured to map certain project names to
 specific Vault roles.
 
-Our CI server has been granted write access to the `relay/enroll-ami` destination inside Vault. The CI server writes
+Our CI server has been granted write access to the `webhook/enroll-ami` destination inside Vault. The CI server writes
 a request including the project name and the AMI ID. This request is then sent to Vault, and forwarded to the AMIBot
 which then performs the enrolling of the AMI on behalf of the user. This gives the CI server the ability to enroll 
 AMIs, but limits the mapping of which policies are assigned to which projects.
@@ -28,7 +28,7 @@ Run `source scripts/dev-init` before working on the plugin. Run `bash scripts/li
 
 ## Configuring
 
-This is still a Work In Progress. The `live-vault-test.sh` script sets up an example `relay` secrets backend with
+This is still a Work In Progress. The `live-vault-test.sh` script sets up an example `webhook` secrets backend with
 a `hello` destination.
 
 When creating a destination, `params` are parameters which are allowed to be forwarded from the user to the target
@@ -40,7 +40,7 @@ I have a separate project that is an example of a target client. It's not publis
 
 ## TODO
 
-* Support verifying the nonce `/relay/verify/`
+* Support verifying the nonce `/webhook/verify/`
 * Support client-side SSL certificates
 * Support per-destination CA (`target_ca=@...`)
 * RWLock on configuration

@@ -1,4 +1,4 @@
-package relay
+package webhook
 
 import (
 	"github.com/SermoDigital/jose/crypto"
