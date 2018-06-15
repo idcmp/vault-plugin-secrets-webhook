@@ -45,7 +45,6 @@ if [ "${VAULT_DEV_BUILD}x" != "x" ]; then
     XC_OSARCH=$(go env GOOS)/$(go env GOARCH)
 fi
 
-# Build!
 echo "==> Building..."
 gox \
     -osarch="${XC_OSARCH}" \

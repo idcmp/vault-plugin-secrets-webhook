@@ -313,10 +313,20 @@ func (b *backend) pathContactDestination(ctx context.Context, req *logical.Reque
 	}
 
 	bytesOut, err := serializeDocument(*document, storageEntry.Value)
-
 	if err != nil {
 		return nil, errwrap.Wrapf("could not marshal document: {{err}}", err)
 	}
+
+	verifyNonce := &logical.StorageEntry{
+		Key:   "verify/" + document.Nonce,
+		Value: bytesOut,
+	}
+	if err := req.Storage.Put(ctx, verifyNonce); err != nil {
+		return nil, errwrap.Wrapf("could not store nonce verification: {{err}}", err)
+	}
+
+	b.Logger().Warn("writing to webhook/verify/" + document.Nonce)
+	defer req.Storage.Delete(ctx, "verify/"+document.Nonce)
 
 	bytesIn, err := sendRequest(destination.TargetURL, bytesOut, destination.FollowRedirects, destination.Timeout, destination.TargetCA)
 

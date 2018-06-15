@@ -40,9 +40,7 @@ I have a separate project that is an example of a target client. It's not publis
 
 ## TODO
 
-* Support verifying the nonce `/webhook/verify/`
 * Support client-side SSL certificates
-* Support per-destination CA (`target_ca=@...`)
 * RWLock on configuration
 * Flesh out example target project.
 * Better logging

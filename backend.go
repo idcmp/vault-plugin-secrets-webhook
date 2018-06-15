@@ -64,7 +64,7 @@ func Backend() *backend {
 			pathConfigDestination(&b),
 			pathConfigDestinations(&b),
 			pathDestination(&b),
-			//pathVerify(&b),
+			pathVerify(&b),
 			//pathFetchClientCertificate(&b),
 		},
 
