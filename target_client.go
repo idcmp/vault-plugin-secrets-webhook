@@ -14,13 +14,11 @@ import (
 
 func sendRequest(url string, body []byte, followRedirects bool, timeout time.Duration, cert []byte) ([]byte, error) {
 
-	rootCAs, _ := x509.SystemCertPool()
-	if rootCAs == nil {
-		rootCAs = x509.NewCertPool()
-	}
-
 	var tlsConfig *tls.Config
+
 	if len(cert) != 0 {
+		rootCAs := x509.NewCertPool()
+
 		if !rootCAs.AppendCertsFromPEM(cert) {
 			return nil, fmt.Errorf("couldn't add target specific CA cert when trying to reach %q", url)
 		}
@@ -30,6 +28,8 @@ func sendRequest(url string, body []byte, followRedirects bool, timeout time.Dur
 			RootCAs:            rootCAs,
 		}
 	} else {
+		rootCAs, _ := x509.SystemCertPool()
+
 		tlsConfig = &tls.Config{
 			InsecureSkipVerify: false,
 			RootCAs:            rootCAs,
