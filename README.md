@@ -11,30 +11,18 @@ The target verifies the signature of the JWS document and then can perform whate
 that the request comes from an entity that has authenticated to Vault and has policies to write to the specific
 destination.
 
-## Example
-
-Sometimes there are users or services which need to perform activities inside Vault, such as enrolling an AMI.
-However, as Vault administrators, we don't want these users to enroll just any AMI into just any policy. We have
-a trusted "AMIBot" that runs with heightened Vault privileges. It's configured to map certain project names to
-specific Vault roles.
-
-Our CI server has been granted write access to the `webhook/enroll-ami` destination inside Vault. The CI server writes
-a request including the project name and the AMI ID. This request is then sent to Vault, and forwarded to the AMIBot
-which then performs the enrolling of the AMI on behalf of the user. This gives the CI server the ability to enroll 
-AMIs, but limits the mapping of which policies are assigned to which projects.
-
 ## Developing
 Run `source scripts/dev-init` before working on the plugin. Run `bash scripts/live-vault-test.sh` to spin Vault up.
-
-## Configuring
 
 This is still a Work In Progress. The `live-vault-test.sh` script sets up an example `webhook` secrets backend with
 a `hello` destination.
 
+## Configuring
+
 Destinations are created by writing to `webhook/config/destination/:name`. Anyone with write privileges to
 `webhook/config/destination/*` can create a new destination. 
 
-THe following parameters are recognized:
+The following parameters are recognized:
 
 * `target_url` is the URL Vault will POST its document to.
 
@@ -43,7 +31,7 @@ THe following parameters are recognized:
 * `metadata` are key value pairs passed to the target endpoint verbatim. Defaults to empty.
 
 * `target_ca` can be set to a PEM-encoded value of the public CA certificate (this is what a call to Vault's `/pki/ca/pem` would return, for example). 
-Note: If `target_ca` is set, the _only_ that CA is recognized. Defaults to unused.
+Note: If `target_ca` is set, it is the _only_ recognized CA. Defaults to unused.
 
 * `send_entity_id` can be set to true if the target would find it useful to know identity information about the caller.
 Vault  will send the entity ID in the payload. The target needs to request details about that entity ID by calling
