@@ -112,6 +112,7 @@ type Destination struct {
 
 // Parse fields from the user and create a Destination with sanitized input.
 func (b *backend) createDestination(data *framework.FieldData) (*Destination, error) {
+
 	var d Destination
 
 	b.Logger().Info("Creating destination", "data", data)
@@ -179,6 +180,9 @@ func (b *backend) createDestination(data *framework.FieldData) (*Destination, er
 }
 
 func (b *backend) pathWriteDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Lock.Lock()
+	defer b.Lock.Unlock()
+
 	b.Logger().Warn("write destination", "path", req.Path)
 
 	d, err := b.createDestination(data)
@@ -203,6 +207,9 @@ func (b *backend) pathWriteDestination(ctx context.Context, req *logical.Request
 }
 
 func (b *backend) pathReadDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Lock.RLock()
+	defer b.Lock.RUnlock()
+
 	b.Logger().Warn("read", "path", req.Path)
 
 	entry, _ := req.Storage.Get(ctx, req.Path)
@@ -227,6 +234,8 @@ func (b *backend) pathReadDestination(ctx context.Context, req *logical.Request,
 }
 
 func (b *backend) pathDeleteDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Lock.Lock()
+	defer b.Lock.Unlock()
 	b.Logger().Warn("delete destination", "path", req.Path)
 
 	err := req.Storage.Delete(ctx, req.Path)
@@ -234,6 +243,8 @@ func (b *backend) pathDeleteDestination(ctx context.Context, req *logical.Reques
 }
 
 func (b *backend) pathDestinationExistenceCheck(ctx context.Context, req *logical.Request, data *framework.FieldData) (bool, error) {
+	b.Lock.RLock()
+	defer b.Lock.RUnlock()
 	b.Logger().Warn("destination existence check", "path", req.Path)
 	entry, err := req.Storage.Get(ctx, req.Path)
 	return entry != nil, err
@@ -241,11 +252,16 @@ func (b *backend) pathDestinationExistenceCheck(ctx context.Context, req *logica
 
 // Sends an empty "ping" document to the destination and expects it to respond with a non-error HTTP return code.
 func (b *backend) pathPingDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Lock.RLock()
+	defer b.Lock.RUnlock()
 	b.Logger().Warn("hi", "path", req.Path)
 	return nil, fmt.Errorf("baby steps")
 }
 
 func (b *backend) pathListDestinations(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Lock.RLock()
+	defer b.Lock.RUnlock()
+
 	elements, err := req.Storage.List(ctx, req.Path)
 	if err != nil {
 		return nil, err
@@ -286,6 +302,9 @@ func (b *backend) buildDocument(destination *Destination, req *logical.Request, 
 }
 
 func (b *backend) pathContactDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Lock.RLock()
+	defer b.Lock.RUnlock()
+
 	b.Logger().Warn("Request: ", "path", req.Path, "params", data.Raw)
 
 	b.Logger().Warn("contact destination", "path", req.Path)

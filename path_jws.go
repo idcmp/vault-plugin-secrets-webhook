@@ -44,6 +44,9 @@ func pathConfigJws(b *backend) *framework.Path {
 
 func (b *backend) pathReadJwsCertificate(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
 
+	b.Lock.RLock()
+	defer b.Lock.RUnlock()
+
 	entry, err := req.Storage.Get(ctx, "config/keys/jws/certificate")
 	if err != nil {
 		return nil, errwrap.Wrapf("could not get public certificate: {{err}}", err)
@@ -57,6 +60,9 @@ func (b *backend) pathReadJwsCertificate(ctx context.Context, req *logical.Reque
 }
 
 func (b *backend) pathWriteJwsKeys(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+
+	b.Lock.Lock()
+	defer b.Lock.Unlock()
 
 	certificate, ok := data.GetOk("certificate")
 	if !ok {

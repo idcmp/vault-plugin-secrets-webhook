@@ -28,6 +28,9 @@ func pathVerify(b *backend) *framework.Path {
 
 func (b *backend) pathVerifyNonce(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
 
+	b.Lock.RLock()
+	defer b.Lock.RUnlock()
+
 	nonce, ok, err := data.GetOkErr("nonce")
 	if err != nil {
 		return nil, err

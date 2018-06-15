@@ -45,3 +45,4 @@ I have a separate project that is an example of a target client. It's not publis
 * Flesh out example target project.
 * Better logging
 * Example policies
+* ping support

@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
+	"sync"
 )
 
 // New returns a new backend as an interface. This func
@@ -78,6 +79,7 @@ func Backend() *backend {
 
 type backend struct {
 	*framework.Backend
+	Lock sync.RWMutex
 }
 
 const backendHelp = `
