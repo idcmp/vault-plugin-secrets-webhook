@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"crypto/x509"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/vault/logical"
@@ -106,6 +107,7 @@ type Destination struct {
 	FollowRedirects bool              `json:"follow_redirects"`
 	Parameters      []string          `json:"params"`
 	Metadata        map[string]string `json:"metadata"`
+	TargetCA        []byte            `yaml:"target_ca"`
 }
 
 // Parse fields from the user and create a Destination with sanitized input.
@@ -160,6 +162,17 @@ func (b *backend) createDestination(data *framework.FieldData) (*Destination, er
 	}
 	d.Metadata = metadata.(map[string]string)
 
+	b.Logger().Warn("About to read target_ca")
+	targetCA, err := getFieldValue("target_ca", data)
+	if err != nil {
+		return nil, err
+	}
+	if targetCA != "" {
+		certPool := x509.NewCertPool()
+		if !certPool.AppendCertsFromPEM(targetCA.([]byte)) {
+			return nil, fmt.Errorf("could not parse \"target_ca\" certificate as PEM")
+		}
+	}
 	b.Logger().Info("Destination created", "destination", d)
 	return &d, nil
 
@@ -208,6 +221,7 @@ func (b *backend) pathReadDestination(ctx context.Context, req *logical.Request,
 			"follow_redirects": d.FollowRedirects,
 			"params":           d.Parameters,
 			"metadata":         d.Metadata,
+			"target_ca":        d.TargetCA,
 		},
 	}, nil
 }
@@ -304,7 +318,7 @@ func (b *backend) pathContactDestination(ctx context.Context, req *logical.Reque
 		return nil, errwrap.Wrapf("could not marshal document: {{err}}", err)
 	}
 
-	bytesIn, err := sendRequest(destination.TargetURL, bytesOut, destination.FollowRedirects, destination.Timeout)
+	bytesIn, err := sendRequest(destination.TargetURL, bytesOut, destination.FollowRedirects, destination.Timeout, destination.TargetCA)
 
 	if err != nil {
 		return nil, errwrap.Wrapf("could not process request: {{err}}", err)

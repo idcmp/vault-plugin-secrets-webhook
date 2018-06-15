@@ -6,12 +6,38 @@ import (
 	"net/http"
 	"time"
 
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
 	"github.com/hashicorp/errwrap"
-	"github.com/hashicorp/go-cleanhttp"
 )
 
-func sendRequest(url string, body []byte, followRedirects bool, timeout time.Duration) ([]byte, error) {
-	client := cleanhttp.DefaultClient()
+func sendRequest(url string, body []byte, followRedirects bool, timeout time.Duration, cert []byte) ([]byte, error) {
+
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+
+	var tlsConfig *tls.Config
+	if len(cert) != 0 {
+		if !rootCAs.AppendCertsFromPEM(cert) {
+			return nil, fmt.Errorf("couldn't add target specific CA cert when trying to reach %q", url)
+		}
+
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: false,
+			RootCAs:            rootCAs,
+		}
+	} else {
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: false,
+			RootCAs:            rootCAs,
+		}
+	}
+
+	tr := &http.Transport{TLSClientConfig: tlsConfig}
+	client := &http.Client{Transport: tr}
 
 	client.Timeout = timeout
 

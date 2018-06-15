@@ -11,11 +11,14 @@ PLUGIN_DIR=$(dirname "$(realpath "${DIR}/../bin/vault-plugin-secrets-webhook")")
 vault server -dev --dev-root-token-id=root-token --dev-plugin-dir="${PLUGIN_DIR}" &
 sleep 1
 
-
 openssl genrsa -out "${DIR}/sample_key.priv" 2048
 openssl rsa -in "${DIR}/sample_key.priv" -pubout >"${DIR}/sample_key.pub"
 
 SHA=$(shasum -a 256 "${PLUGIN_DIR}/vault-plugin-secrets-webhook" |awk '{print $1}')
+
+vault secrets enable pki
+vault write pki/root/generate/internal common_name="example.com"
+curl http://127.0.0.1:8200/v1/pki/ca/pem >"${DIR}/pki_ca.pem"
 
 vault write sys/plugins/catalog/webhook-plugin command=vault-plugin-secrets-webhook "sha_256=${SHA}"
 
@@ -28,6 +31,6 @@ vault read webhook/config/destination/hello
 vault write webhook/destination/hello foo=bar
 
 
-vault read -field=certificate webhook/jws/certificate
+vault read -field=certificate webhook/keys/jws/certificate
 
 

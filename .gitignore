@@ -16,3 +16,4 @@ pkg/
 .idea
 sample_key.priv
 sample_key.pub
+pki_ca.pem
