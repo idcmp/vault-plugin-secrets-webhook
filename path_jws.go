@@ -44,6 +44,7 @@ func pathConfigJws(b *backend) *framework.Path {
 
 func (b *backend) pathReadJwsCertificate(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
 
+	b.Logger().Debug("pathReadJwsCertificate", "ctx", ctx, "req", req, "data", data)
 	b.Lock.RLock()
 	defer b.Lock.RUnlock()
 
@@ -60,7 +61,7 @@ func (b *backend) pathReadJwsCertificate(ctx context.Context, req *logical.Reque
 }
 
 func (b *backend) pathWriteJwsKeys(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
-
+	b.Logger().Debug("pathWriteJwsKeys", "ctx", ctx, "req", req, "data", data)
 	b.Lock.Lock()
 	defer b.Lock.Unlock()
 

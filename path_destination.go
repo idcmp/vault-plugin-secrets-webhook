@@ -9,11 +9,23 @@ import (
 	"time"
 
 	"crypto/x509"
+
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
 )
+
+// Destination contains all the operator specified configuration.
+type Destination struct {
+	TargetURL       string            `json:"target_url"`
+	SendEntityID    bool              `json:"send_entity_id"`
+	Timeout         time.Duration     `json:"timeout"`
+	FollowRedirects bool              `json:"follow_redirects"`
+	Parameters      []string          `json:"params"`
+	Metadata        map[string]string `json:"metadata"`
+	TargetCA        []byte            `yaml:"target_ca"`
+}
 
 func pathDestination(b *backend) *framework.Path {
 	return &framework.Path{
@@ -99,23 +111,10 @@ func pathConfigDestination(b *backend) *framework.Path {
 	}
 }
 
-// Destination contains all the operator specified configuration.
-type Destination struct {
-	TargetURL       string            `json:"target_url"`
-	SendEntityID    bool              `json:"send_entity_id"`
-	Timeout         time.Duration     `json:"timeout"`
-	FollowRedirects bool              `json:"follow_redirects"`
-	Parameters      []string          `json:"params"`
-	Metadata        map[string]string `json:"metadata"`
-	TargetCA        []byte            `yaml:"target_ca"`
-}
-
 // Parse fields from the user and create a Destination with sanitized input.
 func (b *backend) createDestination(data *framework.FieldData) (*Destination, error) {
 
 	var d Destination
-
-	b.Logger().Info("Creating destination", "data", data)
 
 	target, ok, err := data.GetOkErr("target_url")
 	if !ok {
@@ -163,7 +162,6 @@ func (b *backend) createDestination(data *framework.FieldData) (*Destination, er
 	}
 	d.Metadata = metadata.(map[string]string)
 
-	b.Logger().Warn("About to read target_ca")
 	targetCA, err := getFieldValue("target_ca", data)
 	if err != nil {
 		return nil, err
@@ -174,16 +172,16 @@ func (b *backend) createDestination(data *framework.FieldData) (*Destination, er
 			return nil, fmt.Errorf("could not parse \"target_ca\" certificate as PEM")
 		}
 	}
-	b.Logger().Info("Destination created", "destination", d)
 	return &d, nil
 
 }
 
 func (b *backend) pathWriteDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+
+	b.Logger().Debug("pathWriteDestination", "ctx", ctx, "req", req, "data", data)
+
 	b.Lock.Lock()
 	defer b.Lock.Unlock()
-
-	b.Logger().Warn("write destination", "path", req.Path)
 
 	d, err := b.createDestination(data)
 	if err != nil {
@@ -207,10 +205,10 @@ func (b *backend) pathWriteDestination(ctx context.Context, req *logical.Request
 }
 
 func (b *backend) pathReadDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Debug("pathReadDestination", "ctx", ctx, "req", req, "data", data)
+
 	b.Lock.RLock()
 	defer b.Lock.RUnlock()
-
-	b.Logger().Warn("read", "path", req.Path)
 
 	entry, _ := req.Storage.Get(ctx, req.Path)
 	d, err := entryToDestination(entry)
@@ -234,31 +232,34 @@ func (b *backend) pathReadDestination(ctx context.Context, req *logical.Request,
 }
 
 func (b *backend) pathDeleteDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Debug("pathDeleteDestination", "ctx", ctx, "req", req, "data", data)
 	b.Lock.Lock()
 	defer b.Lock.Unlock()
-	b.Logger().Warn("delete destination", "path", req.Path)
 
 	err := req.Storage.Delete(ctx, req.Path)
 	return nil, err
 }
 
 func (b *backend) pathDestinationExistenceCheck(ctx context.Context, req *logical.Request, data *framework.FieldData) (bool, error) {
+	b.Logger().Debug("pathDestinationExistenceCheck", "ctx", ctx, "req", req, "data", data)
 	b.Lock.RLock()
 	defer b.Lock.RUnlock()
-	b.Logger().Warn("destination existence check", "path", req.Path)
+
 	entry, err := req.Storage.Get(ctx, req.Path)
 	return entry != nil, err
 }
 
 // Sends an empty "ping" document to the destination and expects it to respond with a non-error HTTP return code.
 func (b *backend) pathPingDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Debug("pathPingDestination", "ctx", ctx, "req", req, "data", data)
 	b.Lock.RLock()
 	defer b.Lock.RUnlock()
-	b.Logger().Warn("hi", "path", req.Path)
+
 	return nil, fmt.Errorf("baby steps")
 }
 
 func (b *backend) pathListDestinations(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Debug("pathListDestinations", "ctx", ctx, "req", req, "data", data)
 	b.Lock.RLock()
 	defer b.Lock.RUnlock()
 
@@ -302,12 +303,10 @@ func (b *backend) buildDocument(destination *Destination, req *logical.Request, 
 }
 
 func (b *backend) pathContactDestination(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
+	b.Logger().Debug("pathContactDestination", "ctx", ctx, "req", req, "data", data)
 	b.Lock.RLock()
 	defer b.Lock.RUnlock()
 
-	b.Logger().Warn("Request: ", "path", req.Path, "params", data.Raw)
-
-	b.Logger().Warn("contact destination", "path", req.Path)
 	entry, _ := req.Storage.Get(ctx, filepath.ToSlash(filepath.Join("config", req.Path)))
 
 	destination, err := entryToDestination(entry)
@@ -344,7 +343,6 @@ func (b *backend) pathContactDestination(ctx context.Context, req *logical.Reque
 		return nil, errwrap.Wrapf("could not store nonce verification: {{err}}", err)
 	}
 
-	b.Logger().Warn("writing to webhook/verify/" + document.Nonce)
 	defer req.Storage.Delete(ctx, "verify/"+document.Nonce)
 
 	bytesIn, err := sendRequest(destination.TargetURL, bytesOut, destination.FollowRedirects, destination.Timeout, destination.TargetCA)
@@ -352,8 +350,6 @@ func (b *backend) pathContactDestination(ctx context.Context, req *logical.Reque
 	if err != nil {
 		return nil, errwrap.Wrapf("could not process request: {{err}}", err)
 	}
-
-	b.Logger().Warn("response", "body", string(bytesIn))
 
 	return &logical.Response{
 		Data: map[string]interface{}{

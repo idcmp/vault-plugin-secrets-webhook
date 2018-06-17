@@ -3,6 +3,7 @@ package webhook
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
 )
@@ -27,7 +28,7 @@ func pathVerify(b *backend) *framework.Path {
 }
 
 func (b *backend) pathVerifyNonce(ctx context.Context, req *logical.Request, data *framework.FieldData) (response *logical.Response, retErr error) {
-
+	b.Logger().Debug("pathVerifyNonce", "ctx", ctx, "req", req, "data", data)
 	b.Lock.RLock()
 	defer b.Lock.RUnlock()
 

@@ -1,5 +1,10 @@
 # vault-plugin-secrets-webhook
 
+## Lexicon
+
+* A "destination" is the path in Vault which can be written to.
+* A "target" is the remote service that Vault does the HTTP POST of the JSON document to.
+
 ## Purpose
 
 HashiCorp Vault provides top notch AAA services. There are times where it would be handy to use the
@@ -17,7 +22,23 @@ Run `source scripts/dev-init` before working on the plugin. Run `bash scripts/li
 This is still a Work In Progress. The `live-vault-test.sh` script sets up an example `webhook` secrets backend with
 a `hello` destination.
 
-## Configuring
+## Configuring the Plugin
+
+Adding the plugin to Vault is outside the scope of this document. Please see HashiCorp's official docs (or 
+have a peek at `scripts/live-vault-test.sh`).
+
+The plugin must be mounted at a certain path, and then needs to be supplied with a public/private key pair for
+doing JSON document signing. You can use Vault's PKI backend, or you can use OpenSSL. 
+
+```
+vault secrets enable -path=webhook -plugin-name=webhook-plugin plugin
+openssl genrsa -out "webhook.priv" 2048
+openssl rsa -in "webhook.priv" -pubout >webhook.pub
+vault write webhook/config/keys/jws certificate=@webhook.pub private_key=@webhook.priv
+```
+
+## Configuring a Destination
+
 
 Destinations are created by writing to `webhook/config/destination/:name`. Anyone with write privileges to
 `webhook/config/destination/*` can create a new destination. 
@@ -42,7 +63,6 @@ whatever Go's default HTTP client decides is best practices are used when follow
 
 * `timeout` duration to allow the request to the target to run before bailing out. Defaults to 60s.
 
-
 ## Extra Security
 
 When a target receives the signed JSON document, one of the fields is a nonce. The target can then call back
@@ -53,6 +73,9 @@ signed properly or cannot reliably verify the JWS signature.
 ## Target Client
 
 I have a separate project that is an example of a target client. It's not published yet (but if you want it, let me know).
+
+Targets can request the public certificate by reading the `webhook/keys/jws/certificate` path and using the
+`certificate` field. This path is available unauthenticated.
 
 ## TODO
 

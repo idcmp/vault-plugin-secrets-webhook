@@ -4,9 +4,10 @@ import (
 	"context"
 	"strings"
 
+	"sync"
+
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
-	"sync"
 )
 
 // New returns a new backend as an interface. This func
